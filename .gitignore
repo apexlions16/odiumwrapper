@@ -1,0 +1,15 @@
+node_modules/
+dist/
+release/
+*.log
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.venv/
+services/api/data/
+services/api/storage/
+.DS_Store
+
+*.tsbuildinfo

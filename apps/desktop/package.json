@@ -1,0 +1,60 @@
+{
+  "name": "@odium/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist-electron/main.js",
+  "description": "Odium Studio Wrapper dubbing production desktop application",
+  "author": "Odium Studio",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "build": "tsc -b && vite build && tsc -p electron/tsconfig.json",
+    "typecheck": "tsc -b --pretty false",
+    "dist:win": "npm run build && electron-builder --win nsis --x64 --publish never",
+    "release": "npm run build && electron-builder --win nsis --x64 --publish always"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "6.0.3",
+    "electron-log": "5.4.4",
+    "electron-updater": "6.8.9",
+    "lucide-react": "1.24.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "concurrently": "10.0.3",
+    "cross-env": "10.1.0",
+    "electron": "43.1.1",
+    "electron-builder": "26.15.3",
+    "typescript": "7.0.2",
+    "vite": "8.1.4",
+    "wait-on": "9.0.10"
+  },
+  "build": {
+    "appId": "com.odiumstudio.wrapper",
+    "productName": "Odium Studio Wrapper",
+    "directories": {"output": "release"},
+    "files": ["dist/**/*", "dist-electron/**/*", "package.json"],
+    "asar": true,
+    "win": {
+      "target": [{"target": "nsis", "arch": ["x64"]}],
+      "artifactName": "Odium-Studio-Wrapper-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
+    },
+    "publish": [{
+      "provider": "github",
+      "owner": "apexlions16",
+      "repo": "odiumwrapper",
+      "releaseType": "release"
+    }]
+  }
+}

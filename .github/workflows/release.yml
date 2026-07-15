@@ -1,0 +1,56 @@
+name: Windows Release
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version without v prefix
+        required: true
+        default: 0.1.0
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      VITE_API_URL: ${{ vars.VITE_API_URL || 'http://localhost:7860' }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Resolve release tag
+        id: meta
+        shell: pwsh
+        run: |
+          if ('${{ github.ref_type }}' -eq 'tag') { $tag = '${{ github.ref_name }}' }
+          elseif ('${{ github.event_name }}' -eq 'workflow_dispatch') { $tag = 'v${{ inputs.version }}' }
+          else { $tag = 'v0.1.0' }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+      - name: Check existing release
+        id: existing
+        shell: pwsh
+        run: |
+          gh release view '${{ steps.meta.outputs.tag }}' *> $null
+          if ($LASTEXITCODE -eq 0) { "exists=true" >> $env:GITHUB_OUTPUT } else { "exists=false" >> $env:GITHUB_OUTPUT }
+      - name: Install dependencies
+        if: steps.existing.outputs.exists != 'true'
+        run: npm install --no-audit --no-fund
+      - name: Build Windows installer
+        if: steps.existing.outputs.exists != 'true'
+        run: npm run dist:win
+      - name: Publish GitHub Release
+        if: steps.existing.outputs.exists != 'true'
+        shell: pwsh
+        run: |
+          $assets = Get-ChildItem 'apps/desktop/release' -File | ForEach-Object { $_.FullName }
+          if ($assets.Count -eq 0) { throw 'No Windows release assets were generated.' }
+          gh release create '${{ steps.meta.outputs.tag }}' $assets `
+            --target '${{ github.sha }}' `
+            --title 'Odium Studio Wrapper ${{ steps.meta.outputs.tag }}' `
+            --notes 'İlk Windows masaüstü sürümü. Rol bazlı prodüksiyon paneli, seslendirme ve miksaj retake akışları, Hugging Face uyumlu API ve uygulama içi otomatik güncelleme altyapısı içerir.'

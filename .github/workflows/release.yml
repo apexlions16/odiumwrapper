@@ -37,8 +37,11 @@ jobs:
         id: existing
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Continue'
           gh release view '${{ steps.meta.outputs.tag }}' *> $null
-          if ($LASTEXITCODE -eq 0) { "exists=true" >> $env:GITHUB_OUTPUT } else { "exists=false" >> $env:GITHUB_OUTPUT }
+          $releaseExists = $LASTEXITCODE -eq 0
+          if ($releaseExists) { "exists=true" >> $env:GITHUB_OUTPUT } else { "exists=false" >> $env:GITHUB_OUTPUT }
+          exit 0
       - name: Install dependencies
         if: steps.existing.outputs.exists != 'true'
         run: npm install --no-audit --no-fund

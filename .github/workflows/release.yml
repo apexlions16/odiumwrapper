@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   release:
@@ -74,3 +75,18 @@ jobs:
             git commit -m "Record $tag release"
             git push
           }
+      - name: Report successful release
+        if: ${{ steps.existing.outputs.exists == 'true' || success() }}
+        shell: pwsh
+        run: |
+          $tag = '${{ steps.meta.outputs.tag }}'
+          $existing = gh issue list --state open --search "[release] $tag published in:title" --json number --jq '.[0].number'
+          if (-not $existing) {
+            gh issue create --title "[release] $tag published" --body "Windows installer and updater assets were published successfully. Release: https://github.com/${{ github.repository }}/releases/tag/$tag"
+          }
+      - name: Report failed release
+        if: failure()
+        shell: pwsh
+        run: |
+          $tag = '${{ steps.meta.outputs.tag }}'
+          gh issue create --title "[release] $tag failed" --body "The Windows release workflow failed. Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
